@@ -64,8 +64,8 @@ def misconception_generation(config: Config, prompts: List[str]) -> List[str]:
     input_ids = tokenizer(prompts, padding=True, return_tensors="pt").to("cuda")
     outputs = model.generate(**input_ids, stop_strings=["###"],max_new_tokens=128, tokenizer=tokenizer)
     generated_texts = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    misconception_text_preds = [text.split("### Misconception")[-1].split("###")[0].strip() for text in generated_texts]
-    return misconception_text_preds
+    # misconception_text_preds = [text.split("### Misconception")[-1].split("###")[0].strip() for text in generated_texts]
+    return generated_texts
 
 def few_shot_prompt():
     return """\
