@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
+    model_id : str
     validation_set: str
     comp_data_dir: str = 'data/eedi-24'
     is_submission: bool = bool(os.getenv('KAGGLE_IS_COMPETITION_RERUN'))
