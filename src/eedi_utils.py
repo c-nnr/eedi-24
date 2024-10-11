@@ -1,6 +1,9 @@
 import polars as pl
 
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
 import os
+from typing import List
 from dataclasses import dataclass
 
 @dataclass
@@ -53,6 +56,16 @@ def score(config: Config, preds: pl.DataFrame) -> float:
     gt = get_complete_dataframe(config).rename({"MisconceptionId":"GT_MisconceptionId"})
     scoring = gt.join(preds, on="QuestionId_Answer", how="left").with_columns(pl.col("MisconceptionId").str.split(" ").list.contains(pl.col("GT_MisconceptionId").cast(pl.Int64).cast(pl.String)).alias("correct@25"))
     return scoring.select(pl.col("correct@25").mean()).item()
+
+def misconception_generation(config: Config, prompts: List[str]) -> List[str]:
+    prompts = [few_shot_prompt()+p+"\n\n### Misconception" for p in prompts]
+    tokenizer = AutoTokenizer.from_pretrained(config.model_id)
+    model = AutoModelForCausalLM.from_pretrained(config.model_id, device_map="auto", torch_dtype='float16')
+    input_ids = tokenizer(prompts, padding=True, return_tensors="pt").to("cuda")
+    outputs = model.generate(**input_ids, stop_strings=["###"],max_new_tokens=128, tokenizer=tokenizer)
+    generated_texts = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    misconception_text_preds = [text.split("### Misconception")[-1].split("###")[0].strip() for text in generated_texts]
+    return misconception_text_preds
 
 def few_shot_prompt():
     return """\
