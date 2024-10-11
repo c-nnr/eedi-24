@@ -6,10 +6,11 @@ from dataclasses import dataclass
 @dataclass
 class Config:
     validation_set: str
+    comp_data_dir: str = 'data/eedi-24'
     is_submission: bool = bool(os.getenv('KAGGLE_IS_COMPETITION_RERUN'))
 
 def get_inference_dataframe(config: Config) -> pl.DataFrame:
-    df = pl.read_csv(f'data/eedi-24/{config.validation_set}.csv')
+    df = pl.read_csv(f'{config.comp_data_dir}/{config.validation_set}.csv')
     answer_df = df.unpivot(
         index=["QuestionId", "ConstructName", "QuestionText", "CorrectAnswer"],
         on=[f"Answer{c}Text" for c in ["A", "B", "C", "D"]],
@@ -29,8 +30,8 @@ def get_inference_dataframe(config: Config) -> pl.DataFrame:
     return tidy_df
 
 def get_complete_dataframe(config: Config) -> pl.DataFrame:
-    mismap_df = pl.read_csv('data/eedi-24/misconception_mapping.csv').with_columns(pl.col("MisconceptionId").cast(pl.Float64))
-    df = pl.read_csv(f'data/eedi-24/train.csv')
+    mismap_df = pl.read_csv(f'{config.comp_data_dir}/misconception_mapping.csv').with_columns(pl.col("MisconceptionId").cast(pl.Float64))
+    df = pl.read_csv(f'{config.comp_data_dir}/train.csv')
     if config.validation_set=='test':
         df = df.head(n=3)
         df = df.with_columns(pl.col("QuestionId") + 1869)
